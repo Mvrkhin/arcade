@@ -933,21 +933,19 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
         </div>
 <style id="mzStyle">
         /* =====================================================================
-           GAME ZONE — CSS
+           NEON SNAKE — PLAY AREA CSS
            ---------------------------------------------------------------------
-           Every style for the mini-games arcade (#gameModal, .game-card, the
-           selection hub, the shared topbar/canvas/overlay chrome, and each
-           game's own .theme-* skin) lives contiguously in this one block,
-           through the closing .game-card.theme-snake rule further down. Pairs
-           with the MU_Game JS module and #gameModal's HTML block — search
-           "MU_Game" and "GAME ZONE — HTML".
+           Styles for the one play surface owned by MU_Snake: #snModal >
+           .sn-card > #snPlay (topbar, canvas wrap, pause / game-over
+           overlays) and the Neon Snake skin on its topbar. The old
+           multi-game picker, starfield menu layers and tile hub were removed
+           — the game picker is MU_Game's #mgHub.
            ===================================================================== */
-        #gameModal {
+        #snModal {
             display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            height: calc(var(--app-1vh, 1vh) * 100);
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
             /* New "arcade night sky" backdrop: one flat two-stop gradient
                plus a single soft glow near the bottom, replacing the old
                three-ellipse gradient stack. Fewer gradient layers means
@@ -959,7 +957,7 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             background:
                 radial-gradient(ellipse 90% 55% at 50% 105%, rgba(0, 225, 255, 0.10), transparent 65%),
                 linear-gradient(165deg, #060815 0%, #0b0e24 52%, #040509 100%);
-            z-index: 9999;
+            z-index: 3;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -989,97 +987,11 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             -webkit-touch-callout: none;
         }
 
-        /* Twinkling starfield + a slow drifting duo of glow blobs, shown
-           only behind the game-selection menu (not during actual gameplay,
-           where the game's own canvas already fills the screen and this
-           would just be wasted paint underneath it). Replaces the previous
-           perspective-grid-floor treatment: no CSS mask, no 3D transform,
-           no rotateX — this version is a flatter, cheaper composition that
-           still reads as "arcade at night" rather than a plain gradient.
-           Pure CSS, no images/network, nothing here costs more than a
-           single paint plus a compositor-only opacity/transform animation,
-           so it's lighter than what it replaces, not heavier. */
-        #gameModal::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background-image:
-                radial-gradient(1.6px 1.6px at 12% 18%, #fff, transparent),
-                radial-gradient(1.2px 1.2px at 28% 62%, #fff, transparent),
-                radial-gradient(1.8px 1.8px at 42% 30%, #fff, transparent),
-                radial-gradient(1.2px 1.2px at 58% 78%, #fff, transparent),
-                radial-gradient(1.5px 1.5px at 68% 15%, #fff, transparent),
-                radial-gradient(1.3px 1.3px at 78% 55%, #fff, transparent),
-                radial-gradient(1.7px 1.7px at 88% 25%, #fff, transparent),
-                radial-gradient(1.2px 1.2px at 20% 88%, #fff, transparent),
-                radial-gradient(1.5px 1.5px at 50% 92%, #fff, transparent),
-                radial-gradient(1.3px 1.3px at 93% 80%, #fff, transparent),
-                radial-gradient(1.1px 1.1px at 8% 50%, #fff, transparent),
-                radial-gradient(1.4px 1.4px at 62% 6%, #fff, transparent);
-            opacity: 0;
-            animation: gmStarTwinkle 5s ease-in-out infinite;
-            transition: opacity 0.6s ease;
-        }
-        #gameModal::after {
-            content: '';
-            position: absolute;
-            inset: -15%;
-            pointer-events: none;
-            background:
-                radial-gradient(circle, rgba(0, 225, 255, 0.32) 0%, transparent 68%) 12% 18% / 46% 46% no-repeat,
-                radial-gradient(circle, rgba(255, 0, 200, 0.24) 0%, transparent 68%) 88% 84% / 42% 42% no-repeat;
-            filter: blur(22px);
-            opacity: 0;
-            animation: gmGlowDrift 20s ease-in-out infinite;
-            transition: opacity 0.6s ease;
-        }
-        /* Both pseudo-elements only turn on while the selection menu (not
-           gameplay) is showing — toggled via this class on #gameModal
-           itself, set in openGameMenu()/backToGameMenu() and cleared the
-           moment a game actually starts. A plain class (rather than :has())
-           keeps this working in the same older/embedded WebViews the rest
-           of this file already works around. */
-        #gameModal.gm-menu-mode::before,
-        #gameModal.gm-menu-mode::after {
-            opacity: 1;
-        }
-        @keyframes gmStarTwinkle {
-            0%, 100% { opacity: 0.85; }
-            50% { opacity: 0.35; }
-        }
-        @keyframes gmGlowDrift {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(-3%, 2%) scale(1.06); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            #gameModal::before,
-            #gameModal::after { animation: none; }
-        }
-
-        /* Gameplay: the twinkling starfield and the blurred drifting glow behind
-           the menu keep running (infinite animations + a 22px blur filter) even
-           while a full-screen opaque canvas hides them, and keep the compositor
-           busy every frame — a real frame-time cost on Telegram's Android WebView.
-           Only the menu (gm-menu-mode) is allowed to show/animate them. */
-        #gameModal:not(.gm-menu-mode)::before,
-        #gameModal:not(.gm-menu-mode)::after { animation: none !important; display: none !important; }
-
-        .game-card {
+        /* The one play card: fills the whole stage (Neon Snake is the only thing in here). */
+        .sn-card {
             background: rgba(10, 10, 10, 0.88);
-            border: 1px solid rgba(255,255,255,0.08);
-            padding: 22px;
-            border-radius: var(--border-radius-main);
-            box-shadow: 0 12px 45px rgba(0,0,0,0.45);
-            text-align: center;
             position: relative;
-            max-width: 95vw;
-            animation: popIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        /* While a game is actually being played, the card takes over the
-           whole screen so the canvas gets maximum room to breathe. */
-        .game-card.gc-playing {
+            text-align: center;
             width: 100vw;
             height: 100vh;
             height: calc(var(--app-1vh, 1vh) * 100);
@@ -1093,39 +1005,10 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             display: flex;
             flex-direction: column;
         }
-
-        /* The game-SELECTION menu (before a game is chosen) also takes over
-           the full screen now, so the person lands on a proper full-page
-           arcade hub — floating on #gameModal's grid/glow background above —
-           instead of a small centered card. */
-        .game-card.gc-menu {
-            width: 100vw;
-            height: 100vh;
-            height: calc(var(--app-1vh, 1vh) * 100);
-            max-width: 100vw;
-            max-height: 100vh;
-            max-height: calc(var(--app-1vh, 1vh) * 100);
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            border-radius: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            box-sizing: border-box;
-            overflow-y: auto;
-        }
-
-
-        /* Frame-delivery fix: the smooth games' roots use contain:layout paint style so the
-           compositor never re-lays-out / re-paints anything outside the game while it runs.
-           Cyber Flappy / Twin Lane Racer / Dead Road share #gameModal, which had no containment. */
-        #gameModal .game-card.gc-playing,
-        #gameModal .game-canvas-wrap { contain: layout paint style; }
-        #gameModal .game-card.gc-playing { animation: none; }
-        #gamePlayArea {
+        /* Frame-delivery: contain layout/paint so the compositor never re-lays-out anything outside the game. */
+        #snModal .sn-card,
+        #snModal .sn-canvas-wrap { contain: layout paint style; }
+        #snPlay {
             width: 100%;
             height: 100%;
             display: flex;
@@ -1133,87 +1016,7 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             box-sizing: border-box;
         }
 
-        /* ------------------------- Game selection hub ------------------------- */
-        .game-hub {
-            width: 100%;
-            max-width: 620px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-        }
-        .game-hub-close {
-            position: fixed;
-            top: max(14px, env(safe-area-inset-top, 0px));
-            inset-inline-end: 16px;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.18);
-            background: rgba(255,255,255,0.06);
-            color: #fff;
-            font-size: 16px;
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            backdrop-filter: blur(4px);
-            z-index: 2;
-            transition: var(--transition-smooth, all 0.2s ease);
-        }
-        .game-hub-close:hover { background: rgba(239,68,68,0.75); border-color: rgba(239,68,68,0.8); transform: rotate(90deg); }
-        .game-hub-close:active { transform: rotate(90deg) scale(0.9); }
-
-        .game-hub-heading { text-align: center; margin-bottom: 34px; }
-        .game-hub-title {
-            margin: 0;
-            font-size: clamp(28px, 8vw, 42px);
-            font-weight: 800;
-            letter-spacing: 3px;
-            color: #fff;
-            text-shadow:
-                0 0 8px rgba(0, 225, 255, 0.85),
-                0 0 22px rgba(0, 225, 255, 0.55),
-                0 0 46px rgba(140, 0, 255, 0.45);
-        }
-        .game-hub-desc {
-            margin: 10px 0 0;
-            font-size: 13px;
-            color: rgba(255,255,255,0.55);
-            letter-spacing: 0.3px;
-        }
-
-        .game-hub-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(130px, 1fr));
-            gap: 16px;
-            width: 100%;
-        }
-        .game-tile {
-            padding: 26px 14px !important;
-            font-size: 15px !important;
-            font-weight: 700;
-            border-radius: 16px !important;
-            background: rgba(255,255,255,0.04) !important;
-            border: 1px solid rgba(255,255,255,0.12) !important;
-            box-shadow: 0 8px 28px rgba(0,0,0,0.35);
-            backdrop-filter: blur(3px);
-            transition: transform 0.2s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-        }
-        .game-tile:hover { transform: translateY(-4px) scale(1.03); }
-        .game-tile:active { transform: translateY(-1px) scale(0.98); }
-        .game-tile-snake { --tile-glow: 74, 222, 128; }
-        .game-tile-snake:hover {
-            border-color: rgba(var(--tile-glow), 0.65) !important;
-            background: rgba(var(--tile-glow), 0.1) !important;
-            box-shadow: 0 10px 32px rgba(0,0,0,0.4), 0 0 26px rgba(var(--tile-glow), 0.35);
-        }
-        @media (min-width: 480px) {
-            .game-hub-grid { grid-template-columns: repeat(4, minmax(110px, 1fr)); }
-        }
-
-        .game-topbar {
+        .sn-topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -1224,16 +1027,14 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             border-bottom: 1px solid rgba(255,255,255,0.08);
             flex: 0 0 auto;
         }
-        .game-topbar-title h3 { margin: 0; font-size: 13px; letter-spacing: 0.6px; }
-        .game-topbar-title p { margin: 1px 0 0; font-size: 9px; color: rgba(255,255,255,0.5); }
-        .game-topbar-actions { display: flex; align-items: center; gap: 8px; }
-        .game-topbar-actions #gameScore {
+        .sn-topbar-actions { display: flex; align-items: center; gap: 8px; }
+        .sn-topbar-actions #snScore {
             font-weight: bold; font-size: 12.5px; color: var(--text-color);
             background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 999px;
         }
-        .game-topbar-nav { display: flex; align-items: center; gap: 8px; }
+        .sn-topbar-nav { display: flex; align-items: center; gap: 8px; }
 
-        .game-canvas-wrap {
+        .sn-canvas-wrap {
             position: relative;
             flex: 1 1 auto;
             min-height: 0;
@@ -1284,7 +1085,7 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             -webkit-tap-highlight-color: transparent;
         }
 
-        #cyberCanvas {
+        #snCanvas {
             background: #050505;
             border: none;
             border-radius: 0;
@@ -1322,7 +1123,7 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
                the source. */
         }
 
-        .game-overlay-panel {
+        .sn-overlay-panel {
             position: absolute;
             inset: 0;
             display: none;
@@ -1332,8 +1133,8 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             backdrop-filter: blur(3px);
             z-index: 2;
         }
-        .game-overlay-panel.show { display: flex; }
-        .go-card {
+        .sn-overlay-panel.show { display: flex; }
+        .sn-go-card {
             background: rgba(12, 12, 16, 0.92);
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: var(--border-radius-main);
@@ -1343,10 +1144,10 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             max-width: 88vw;
         }
-        .go-card h3 { margin: 0 0 8px; font-size: 19px; letter-spacing: 0.6px; }
-        .go-card p { margin: 0 0 18px; font-size: 13px; color: rgba(255,255,255,0.65); }
-        .go-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-        .go-best { font-size: 11px; opacity: .5; margin-top: -10px; margin-bottom: 16px; }
+        .sn-go-card h3 { margin: 0 0 8px; font-size: 19px; letter-spacing: 0.6px; }
+        .sn-go-card p { margin: 0 0 18px; font-size: 13px; color: rgba(255,255,255,0.65); }
+        .sn-go-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .sn-go-best { font-size: 11px; opacity: .5; margin-top: -10px; margin-bottom: 16px; }
 
         /* ---- "مار نئونی" (Neon Snake) theme ----
            Same immersive fullscreen HUD treatment as the themes above: a
@@ -1356,37 +1157,34 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
            it, plus a glowing cyan score pill (top-left) and round icon-only
            menu/exit buttons (top-right) recolored into the game's own
            cyan/magenta neon palette instead of the plain default topbar.
-           Toggled only while Neon Snake is the active game (see
-           startNeonSnake / openGameMenu / backToGameMenu / closeGame). */
-        .game-card.theme-snake .game-topbar {
+           Always applied: Neon Snake is the only game on this card. */
+        .sn-card .sn-topbar {
             position: absolute; top: 0; left: 0; right: 0; z-index: 5;
             background: transparent; border-bottom-color: transparent;
             padding: 12px 14px; pointer-events: none;
         }
-        .game-card.theme-snake .game-topbar-title { display: none; }
-        .game-card.theme-snake .game-topbar-actions {
+        .sn-card .sn-topbar-actions {
             pointer-events: auto; width: 100%; gap: 0;
             justify-content: space-between; align-items: flex-start;
         }
-        .game-card.theme-snake .game-topbar-actions #gameScore {
+        .sn-card .sn-topbar-actions #snScore {
             background: rgba(4, 20, 22, 0.55); border: 1px solid rgba(0,240,255,0.35);
             padding: 6px 14px; font-size: 12.5px; font-weight: 800;
             color: #baffef; letter-spacing: 0.3px; border-radius: 999px;
             box-shadow: 0 6px 18px rgba(0,0,0,0.3), 0 0 14px rgba(0,240,255,0.22);
             text-shadow: 0 0 8px rgba(0,240,255,0.65);
         }
-        .game-card.theme-snake .game-topbar-nav .img-btn {
+        .sn-card .sn-topbar-nav .img-btn {
             width: 32px; height: 32px; padding: 0 !important; border-radius: 50%;
             display: flex; align-items: center; justify-content: center; font-size: 0 !important;
             background: rgba(4, 20, 22, 0.55) !important;
             border: 1px solid rgba(0,240,255,0.35) !important;
             box-shadow: 0 6px 16px rgba(0,0,0,0.3), 0 0 12px rgba(0,240,255,0.2);
         }
-        .game-card.theme-snake #btnGameMenu::before { content: "\2630"; font-size: 14px; color: #baffef; }
-        .game-card.theme-snake #btnGameExit {
+        .sn-card #snBtnExit {
             background: rgba(255,45,110,0.22) !important; border-color: rgba(255,45,110,0.5) !important;
         }
-        .game-card.theme-snake #btnGameExit::before { content: "\2715"; font-size: 14px; color: #ffd6e8; }
+        .sn-card #snBtnExit::before { content: "\2715"; font-size: 14px; color: #ffd6e8; }
         /* ===================================== end GAME ZONE — CSS ===================================== */
 
 /* ---- Arcade integration: place the game layer inside the stage ---- */
@@ -1395,7 +1193,6 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
 #mzRoot[hidden]{display:none}
 #mzRoot .mz-panel[hidden]{display:none}
 #mzRoot button{font-family:inherit}
-#mzRoot #gameModal{position:absolute;inset:0;width:100%;height:100%;z-index:3}
 #mzRoot .btn-main{background:rgba(0,0,0,.4);padding:9px 14px;font-size:12px;font-family:inherit;font-weight:500;color:var(--text-color);border:1px solid var(--panel-border);border-radius:var(--border-radius-sm);cursor:pointer;transition:var(--transition-smooth);flex:1;min-width:100px;box-sizing:border-box;display:flex;justify-content:center;align-items:center;gap:5px}
 #mzRoot .btn-main:hover{background:rgba(255,255,255,.09);border-color:var(--text-color);color:#fff}
 #mzRoot .btn-main:active{transform:scale(.96);background:rgba(255,255,255,.16);transition-duration:.08s}
@@ -1408,45 +1205,37 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
         <h2 class="nd-title" style="background-image:linear-gradient(90deg,#4ade80,#7cf6ff);text-shadow:0 0 26px rgba(74,222,128,.45)">NEON SNAKE</h2>
         <div class="nd-sub" data-mz="sub"></div>
         <div class="nd-best-row" data-mz="best">BEST — 0</div>
-        <button class="nd-btn" onclick="MU_Zone.begin()" style="border-color:rgba(74,222,128,.55);background:linear-gradient(180deg,rgba(74,222,128,.24),rgba(255,47,208,.12));box-shadow:0 0 22px rgba(74,222,128,.25)">🐍 START</button>
+        <button class="nd-btn" onclick="MU_Snake.begin()" style="border-color:rgba(74,222,128,.55);background:linear-gradient(180deg,rgba(74,222,128,.24),rgba(255,47,208,.12));box-shadow:0 0 22px rgba(74,222,128,.25)">🐍 START</button>
         <div class="nd-hint" data-mz="hint"></div>
     </div>
-    <div id="gameModal">
-        <div class="game-card" id="gameCard">
-            <div id="gameSelectMenu" style="display:none"></div>
-
-            <div id="gamePlayArea" style="display: none;">
-                <div class="game-topbar">
-                    <div class="game-topbar-title">
-                        <h3 id="gameTitleActive">NEON GAME</h3>
-                        <p id="gameDescActive"></p>
-                    </div>
-                    <div class="game-topbar-actions">
-                        <span id="gameScore">امتیاز: 0</span>
-                        <div class="game-topbar-nav">
-                            <button class="img-btn" id="btnGameMenu" style="padding: 7px 14px; background: rgba(255,255,255,0.13); color: #fff;" onclick="MU_Zone.backToMenu()">منو</button>
-                            <button class="img-btn" id="btnGameExit" style="padding: 7px 14px; background: rgba(239, 68, 68, 0.75); color: #fff;" onclick="MU_Zone.close()">خروج</button>
+    <div id="snModal">
+        <div class="sn-card">
+            <div id="snPlay" style="display: none;">
+                <div class="sn-topbar">
+                    <div class="sn-topbar-actions">
+                        <span id="snScore">امتیاز: 0</span>
+                        <div class="sn-topbar-nav">
+                            <button class="img-btn" id="snBtnExit" style="padding: 7px 14px; background: rgba(239, 68, 68, 0.75); color: #fff;" onclick="MU_Snake.close()">خروج</button>
                         </div>
                     </div>
                 </div>
-                <div class="game-canvas-wrap" id="gameCanvasWrap">
-                    <canvas id="cyberCanvas"></canvas>
-                    <div class="game-overlay-panel" id="gamePauseOverlay">
-                        <div class="go-card">
+                <div class="sn-canvas-wrap" id="snCanvasWrap">
+                    <canvas id="snCanvas"></canvas>
+                    <div class="sn-overlay-panel" id="snPauseOverlay">
+                        <div class="sn-go-card">
                             <h3>⏸ توقف موقت</h3>
                             <p>برای ادامه، لمس کن یا کلیک کن</p>
                         </div>
                     </div>
-                    <div class="game-overlay-panel" id="gameOverOverlay">
-                        <div class="go-card">
-                            <h3 id="goTitle">🏁 بازی تمام شد!</h3>
-                            <div class="go-scoreboard">
-                                <p id="goScoreText">امتیاز: 0</p>
-                                <p class="go-best" id="goBestText"></p>
+                    <div class="sn-overlay-panel" id="snOverOverlay">
+                        <div class="sn-go-card">
+                            <h3 id="snOverTitle">🏁 بازی تمام شد!</h3>
+                            <div class="sn-go-scoreboard">
+                                <p id="snOverScore">امتیاز: 0</p>
+                                <p class="sn-go-best" id="snOverBest"></p>
                             </div>
-                            <div class="go-actions">
-                                <button class="btn-main" id="btnGoRestart"><span class="go-act-icon go-act-icon-restart">🔁</span><span class="go-act-label">دوباره</span></button>
-                                <button class="btn-main" id="btnGoMenu"><span class="go-act-icon go-act-icon-home">🏠</span><span class="go-act-label">منو</span></button>
+                            <div class="sn-go-actions">
+                                <button class="btn-main" id="snBtnRestart"><span class="sn-go-act-icon sn-go-act-icon-restart">🔁</span><span class="sn-go-act-label">دوباره</span></button>
                             </div>
                         </div>
                     </div>
@@ -2120,7 +1909,17 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
                 // "play it again": the hub renders but is invisible/unusable
                 // underneath the last game's leftover screen. See showHub().
                 hide: typeof api.hide === 'function' ? api.hide : null,
-                resume: typeof api.resume === 'function' ? api.resume : null
+                resume: typeof api.resume === 'function' ? api.resume : null,
+                // refit(): called when the viewport changed (window resize or
+                // Telegram 'viewportChanged') while this game is the active one.
+                refit: typeof api.refit === 'function' ? api.refit : null,
+                // Extra ?game=<alias> names that open this game directly.
+                aliases: Array.isArray(api.aliases) ? api.aliases : [],
+                // Optional hub-card data so the shell (not each game) keeps
+                // the card's text + best-score chip up to date:
+                //   { id:'NeonSnake', bestKey:'localStorageKey',
+                //     text:{ fa:[title, desc, playLabel], en:[...] } }
+                card: api.card || null
             };
         }
         // Back-compat: the original single-game shape was
@@ -2190,13 +1989,66 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             } catch(_){}
         }
 
+        // Language + best-score chip for every registered game that declared
+        // a `card` (see register()). One place, no per-game monkey-patching.
+        function refreshCards(){
+            const lang = (typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en' : 'fa';
+            Object.keys(games).forEach(function(id){
+                const c = games[id].card;
+                if(!c) return;
+                const t = c.text && c.text[lang];
+                function setText(suffix, v){
+                    const el = document.getElementById('mgCard' + c.id + suffix);
+                    if(el && v != null) el.textContent = v;
+                }
+                if(t){ setText('TitleFa', t[0]); setText('Desc', t[1]); setText('Play', t[2]); }
+                if(c.bestKey){
+                    try {
+                        const n = parseInt(localStorage.getItem(c.bestKey), 10) || 0;
+                        const chip = document.getElementById('mgCard' + c.id + 'Best');
+                        const val = document.getElementById('mgCard' + c.id + 'BestVal');
+                        if(chip && val){ if(n > 0){ val.textContent = n; chip.hidden = false; } else chip.hidden = true; }
+                    } catch(_){}
+                }
+            });
+        }
+
         function showHub(){
             deactivateCurrent();
             const ov = document.getElementById('markhinGameOverlay');
             const hub = document.getElementById('mgHub');
             if(ov) ov.classList.remove('mg-fullscreen');
             if(hub) hub.hidden = false;
+            setTgBack(false);
+            popHist();
             refreshHubBadges();
+            refreshCards();
+        }
+
+        // Browser/phone back (Chrome etc.): one history entry while a game is open,
+        // so system Back returns to the hub; from the hub it leaves the page normally.
+        let histPushed = false;
+        function pushHist(){
+            if(histPushed) return;
+            try { history.pushState({mgGame:1}, ''); histPushed = true; } catch(_){}
+        }
+        function popHist(){
+            if(!histPushed) return;
+            try { history.back(); } catch(_){ histPushed = false; }
+        }
+        window.addEventListener('popstate', function(){
+            if(!histPushed) return;
+            histPushed = false;
+            if(activeId) showHub();
+        });
+
+        function setTgBack(visible){
+            try {
+                const bb = TG && TG.BackButton;
+                if(!bb) return;
+                if(visible){ if(bb.show) bb.show(); }
+                else { if(bb.hide) bb.hide(); }
+            } catch(_){}
         }
 
         function launch(id){
@@ -2209,6 +2061,8 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             if(hub) hub.hidden = true;
             if(ov) ov.classList.add('mg-fullscreen');
             activeId = id;
+            setTgBack(true);
+            pushHist();
             g.mount(stage);
         }
 
@@ -2217,6 +2071,14 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
         // Telegram 'deactivated'/'activated' (Bot API 8.0+): the Mini App was
         // minimised / brought back. Stop burning CPU while it isn't visible.
         let tgHooked = false;
+        function refitActive(){
+            if(activeId && games[activeId] && games[activeId].refit){
+                try { games[activeId].refit(); } catch(_){}
+            }
+        }
+        // Plain browser resize/rotation goes through the same refit hook as
+        // Telegram's viewportChanged, so games never wire either themselves.
+        window.addEventListener('resize', refitActive);
         function hookTelegramLifecycle(){
             if(tgHooked) return;
             try {
@@ -2227,6 +2089,7 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
                             try { games[activeId].resume(); } catch(_){}
                         }
                     });
+                    if(TG.onEvent) TG.onEvent('viewportChanged', refitActive);
                     tgHooked = true;
                 }
             } catch(_){}
@@ -2243,10 +2106,24 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             document.documentElement.classList.add('mu-game-open');
             try { window.MU_Perf && window.MU_Perf.probeRefresh(); } catch(_){}
             hookTelegramLifecycle();
-            try { TG && TG.BackButton && TG.BackButton.show && TG.BackButton.show(); } catch(_){}
+            // Hub is the root screen: register the handler but keep the button hidden.
+            try { TG && TG.BackButton && TG.BackButton.offClick && TG.BackButton.offClick(mu_handleGameBack); } catch(_){}
             try { TG && TG.BackButton && TG.BackButton.onClick && TG.BackButton.onClick(mu_handleGameBack); } catch(_){}
+            setTgBack(false);
             // Opening the page always lands on the game picker first.
             showHub();
+            openDeepLink();
+        }
+        // ?game=<id|alias> (or #game=...) opens that game straight away, once.
+        let deepLinked = false;
+        function openDeepLink(){
+            if(deepLinked) return;
+            deepLinked = true;
+            const m = /[?#&]game=([\w-]+)/.exec(location.search + location.hash);
+            if(!m) return;
+            const q = m[1];
+            const gid = Object.keys(games).filter(function(k){ return k === q || games[k].aliases.indexOf(q) > -1; })[0];
+            if(gid) launch(gid);
         }
         function close(){
             deactivateCurrent();
@@ -2257,7 +2134,7 @@ html.mg-lite .mg-hub-vig{background:radial-gradient(ellipse at 50% 45%,transpare
             try { TG && TG.BackButton && TG.BackButton.offClick && TG.BackButton.offClick(mu_handleGameBack); } catch(_){}
             try { TG && TG.BackButton && TG.BackButton.hide && TG.BackButton.hide(); } catch(_){}
         }
-        return { mount, register, launch, showHub, isGameActive, open, close };
+        return { mount, register, launch, showHub, isGameActive, open, close, refreshCards };
     })();
     function openMarkhinGame(){ window.MU_Game.open(); }
     function closeMarkhinGame(){ window.MU_Game.close(); }
@@ -18616,54 +18493,24 @@ return api;
 </script>
 <script>
 /* =========================================================================
-   Neon Snake — extra game for the MARKHIN arcade.
-   Each game opens on its own start page (same look as the other games);
-   hub cards for them are not added yet. Until then they can be opened with
-   ?game=snake  (or #game=...) in the page URL.
+   MU_GameKit — shared, game-agnostic helpers for every game in the arcade.
+   ---------------------------------------------------------------------
+   Nothing in here knows about a particular game's DOM or state. A game
+   passes in whatever it needs (canvas, wrapper element, element ids) and
+   gets plain results back:
+     haptic(kind)                      Telegram haptics, coalesced + non-blocking
+     getBest(key) / saveBest(key, n)   per-game best score (localStorage)
+     filterInPlace(arr, keep)          garbage-free pruning for hot loops
+     tier / tierDpr / frameCapMs       adaptive quality (MU_Perf)
+     makeMeter / applyDpr              frame monitor + DPR re-allocation
+     fitCanvas(wrap, canvas, mode, o)  crisp full-area canvas -> {width,height,ctx,dpr}
+     lastFit                           { w, h } of the last fitCanvas() call
+     showOverlay / hideOverlay         toggle a .show overlay panel by id
+     presentGameOver(cfg)              fill + show a game-over card
+     dbgWork / dbgFrame / configureDebug   optional on-screen frame monitor
+   Also installs the CanvasRenderingContext2D.roundRect polyfill.
    ========================================================================= */
-        /* =====================================================================
-           MU_Game — GAME ZONE MODULE
-           ---------------------------------------------------------------------
-           Everything about the built-in mini-games arcade — the four games
-           (Neon Snake, Twin-Lane Racer Classic/Modern, Cyber Flappy, Dead
-           Road), the shared menu/play-area chrome (#gameModal, open/close/
-           back-to-menu), shared per-run state (score, pause flag, the active
-           game's cleanup/abort handles), and the small shared helpers every
-           game leans on (canvas fitting, haptics, the game-over card, best-
-           score tracking, Telegram back-button/viewport/deactivate wiring) —
-           now lives in this single namespace, the same way MU_Theme owns all
-           theme state a bit further up in this file. Nothing outside this
-           module reads or writes game state directly anymore; it goes
-           through MU_Game's own functions or the thin global wrappers right
-           after it.
-
-           Two things stay OUTSIDE this module on purpose:
-           - #gameModal's HTML markup and CSS (search "#gameModal" /
-             ".game-card") — this module only ever touches them by id/class,
-             never defines them, so they can move independently.
-           - The roundRect() polyfill immediately below: it patches a shared
-             browser prototype (CanvasRenderingContext2D), which is global by
-             nature, even though today only the game canvases use it.
-
-           A handful of thin global wrappers (openGameMenu(), closeGame(),
-           startNeonSnake(), etc.) are kept right after this module, purely
-           because #gameModal's buttons call them via onclick="..." attributes
-           in the HTML, which need plain global function names to find — and
-           because the AI tool-call handler (search "open_game_zone") calls
-           them the same way MU_Theme's cycleTheme() wrapper is called from
-           the theme button.
-           ===================================================================== */
-        const MU_Zone = (function () {
-        // Game Zone's own runtime state — was previously declared among
-        // unrelated app-wide variables near the top of the script; now
-        // private to this module, exactly like MU_Theme's own state.
-        let currentGameInterval = null;
-        let gameScore = 0;
-        let gameAborter = new AbortController();
-        let gameStopFn = null;     // cleanup for the active game's animation loop
-        let gamePaused = false;    // true while the pause overlay is showing
-        let gameResizeTimer = null;
-
+const MU_GameKit = (function () {
         // Polyfill for older WebViews (notably some Telegram in-app browser
         // builds lag behind Chrome) that don't yet support ctx.roundRect(),
         // used by the game graphics below.
@@ -18683,77 +18530,6 @@ return api;
                 this.closePath();
                 return this;
             };
-        }
-
-        function _origOpenGameMenu() {
-            document.getElementById('gameModal').style.display = 'flex';
-            document.getElementById('gameModal').classList.add('gm-menu-mode');
-            document.getElementById('gameSelectMenu').style.display = 'block';
-            document.getElementById('gamePlayArea').style.display = 'none';
-            document.getElementById('gameCard').classList.remove('gc-playing');
-            document.getElementById('gameCard').classList.add('gc-menu');
-            document.getElementById('gameCard').classList.remove('theme-snake');
-            clearGameEvents();
-            mAiGameTelegramChrome(true);
-            // Pauses the animated theme background for as long as any game
-            // is open — see the body.mu-game-open rule near the top of the
-            // stylesheet for why.
-            document.body.classList.add('mu-game-open');
-        }
-
-        function _origBackToGameMenu() {
-            clearGameEvents();
-            document.getElementById('gameModal').classList.add('gm-menu-mode');
-            document.getElementById('gameSelectMenu').style.display = 'block';
-            document.getElementById('gamePlayArea').style.display = 'none';
-            document.getElementById('gameCard').classList.remove('gc-playing');
-            document.getElementById('gameCard').classList.add('gc-menu');
-            document.getElementById('gameCard').classList.remove('theme-snake');
-        }
-
-        function _origCloseGame() {
-            document.getElementById('gameModal').style.display = 'none';
-            document.getElementById('gameModal').classList.remove('gm-menu-mode');
-            document.getElementById('gameCard').classList.remove('gc-playing');
-            document.getElementById('gameCard').classList.remove('gc-menu');
-            document.getElementById('gameCard').classList.remove('theme-snake');
-            clearGameEvents();
-            mAiGameTelegramChrome(false);
-            document.body.classList.remove('mu-game-open');
-        }
-
-        // Adapts Telegram's native chrome to the game modal's lifetime:
-        //  - expand() so the modal actually gets the full available height
-        //    instead of Telegram's collapsed default view.
-        //  - disableVerticalSwipes() (Bot API 7.7+) so Telegram's own
-        //    swipe-down-to-minimize gesture can't fire while the player is
-        //    dragging/swiping on the canvas to steer Snake.
-        //  - BackButton takes over the hardware/gesture back action so it
-        //    steps out of the game (play -> menu -> closed) instead of
-        //    closing the whole Mini App by mistake.
-        // Everything is feature-detected and no-ops instantly outside Telegram.
-        function mAiGameBackHandler() {
-            const playing = document.getElementById('gamePlayArea').style.display === 'flex';
-            if (playing) backToGameMenu(); else closeGame();
-        }
-        function mAiGameTelegramChrome(active) { return;
-            if (!TG) return;
-            try {
-                if (active) {
-                    TG.expand && TG.expand();
-                    if (typeof TG.disableVerticalSwipes === 'function') TG.disableVerticalSwipes();
-                    if (TG.BackButton) {
-                        TG.BackButton.onClick(mAiGameBackHandler);
-                        TG.BackButton.show();
-                    }
-                } else {
-                    if (typeof TG.enableVerticalSwipes === 'function') TG.enableVerticalSwipes();
-                    if (TG.BackButton) {
-                        TG.BackButton.offClick(mAiGameBackHandler);
-                        TG.BackButton.hide();
-                    }
-                }
-            } catch (_) {}
         }
 
         // Small wrapper so every haptic call site stays one line and never
@@ -18812,21 +18588,8 @@ return api;
             catch (_) { setTimeout(run, 0); }
         }
 
-        function clearGameEvents() {
-            if (currentGameInterval) {
-                clearInterval(currentGameInterval);
-                currentGameInterval = null;
-            }
-            if (gameStopFn) {
-                try { gameStopFn(); } catch (_) {}
-                gameStopFn = null;
-            }
-            gamePaused = false;
-            hideGameOverlay('gamePauseOverlay');
-            hideGameOverlay('gameOverOverlay');
-            gameAborter.abort();
-            gameAborter = new AbortController();
-        }
+
+        const lastFit = { w: 0, h: 0 };
 
         /* ---------------- shared fullscreen-game helpers ---------------- */
 
@@ -18889,6 +18652,7 @@ return api;
         }
         // Frame monitor (diagnostic): tap the score pill 5 times quickly to show/hide a small readout of
         // real frame times, canvas position and pixel ratio. Costs nothing while hidden.
+        const dbgCfg = { canvas: '', hit: '' };   // set by the game via configureDebug()
         let mu_dbgOn = false, mu_dbgEl = null, mu_dbgN = 0, mu_dbgSum = 0, mu_dbgMax = 0, mu_dbgMin = 1e9, mu_dbgT = 0, mu_dbgTaps = [];
         let mu_dbgWSum = 0, mu_dbgWMax = 0, mu_dbgLong = 0;
         function mu_dbgWork(ms) { if (!mu_dbgOn) return; mu_dbgWSum += ms; if (ms > mu_dbgWMax) mu_dbgWMax = ms; }
@@ -18900,7 +18664,7 @@ return api;
             if (now - mu_dbgT < 500) return;
             mu_dbgT = now;
             try {
-                const cv = document.getElementById('cyberCanvas'), r = cv.getBoundingClientRect();
+                const cv = document.getElementById(dbgCfg.canvas), r = cv.getBoundingClientRect();
                 mu_dbgEl.textContent = 'frame avg ' + (mu_dbgSum / mu_dbgN).toFixed(1) + ' min ' + mu_dbgMin.toFixed(1) + ' max ' + mu_dbgMax.toFixed(1) + 'ms | slow(>20ms) ' + mu_dbgLong + '/' + mu_dbgN +
                     ' | JS work avg ' + (mu_dbgWSum / mu_dbgN).toFixed(1) + ' max ' + mu_dbgWMax.toFixed(1) + 'ms' +
                     ' | canvas ' + cv.width + 'x' + cv.height + ' css ' + r.width.toFixed(1) + 'x' + r.height.toFixed(1) + ' top ' + r.top.toFixed(2) +
@@ -18923,7 +18687,7 @@ return api;
         // quickly (pointerdown in the capture phase, so the games' own touch handlers can't swallow
         // it), or open the page with ?dbg=1 / #dbg=1.
         document.addEventListener('pointerdown', function (e) {
-            const hit = (e.target && e.target.closest && e.target.closest('#gameScore')) || (e.clientX < 90 && e.clientY < 90);
+            const hit = (dbgCfg.hit && e.target && e.target.closest && e.target.closest(dbgCfg.hit)) || (e.clientX < 90 && e.clientY < 90);
             if (!hit) return;
             const t = Date.now(); mu_dbgTaps = mu_dbgTaps.filter(x => t - x < 2500); mu_dbgTaps.push(t);
             if (mu_dbgTaps.length < 5) return;
@@ -18950,8 +18714,7 @@ return api;
         // the top bar, edge to edge; 'square' is kept for any future game
         // that wants a centered square arena instead. Returns the logical
         // {width, height} to draw with.
-        function fitGameCanvas(canvas, mode, opts) {
-            const wrap = document.getElementById('gameCanvasWrap');
+        function fitCanvas(wrap, canvas, mode, opts) {
             const rect = wrap.getBoundingClientRect();
             let w = Math.max(1, Math.floor(rect.width));
             let h = Math.max(1, Math.floor(rect.height));
@@ -19014,7 +18777,7 @@ return api;
             // it skip that entirely — one of the more reliable Canvas2D
             // wins on the weaker Android WebViews Telegram's in-app browser
             // runs on. Safe here specifically because this is the first
-            // and only place `#cyberCanvas` ever has getContext('2d')
+            // and only place `#snCanvas` ever has getContext('2d')
             // called on it (context options are locked in on first call;
             // every game start after this just reuses the same context).
             // Bug fix ("obstacles/whole canvas still trembling a little even
@@ -19122,8 +18885,8 @@ return api;
                 canvas.style.left = (Math.ceil(wr.left * px - 1e-6) / px - wr.left) + 'px';
                 canvas.style.top  = (Math.ceil(wr.top  * px - 1e-6) / px - wr.top)  + 'px';
             } catch (_) {}
-            window.__markhinFitW = w;
-            window.__markhinFitH = h;
+            lastFit.w = w;
+            lastFit.h = h;
             // Bug fix ("obstacles constantly trembling/shaking" — this is
             // the OTHER, independent cause alongside the frame-timing one
             // fixed in each game's loop(): even a perfectly-computed,
@@ -19147,24 +18910,113 @@ return api;
             return { width: w, height: h, ctx, dpr };
         }
 
-        // Wires the game-over card once per game and returns a function that
-        // reveals it with the final score. Handles the Telegram-in-app-browser
-        // issue where native alert()/confirm() can be blocked or look jarring —
-        // this in-canvas overlay works everywhere and lets the player restart
-        // or return to the menu with a single tap.
+
+        function getBest(key) {
+            try { return parseInt(localStorage.getItem('markhin_game_best_' + key) || '0', 10) || 0; } catch (_) { return 0; }
+        }
+
+        // Fills and shows a game-over card. The game owns the card's markup and
+        // passes its element ids; this just does the score/best bookkeeping and
+        // the wiring that every game would otherwise repeat. Uses an in-page
+        // overlay instead of alert()/confirm(), which Telegram's in-app browser
+        // can block.
+        //   cfg = { score, bestKey, title, onRestart, onMenu,
+        //           ids: { overlay, title, score, best, restart, menu? } }  (menu/onMenu optional)
+        function presentGameOver(cfg) {
+            const ids = cfg.ids;
+            const best = markhinGameBestScore(cfg.bestKey, cfg.score);
+            const fa = currentLang === 'fa';
+            document.getElementById(ids.title).textContent = cfg.title;
+            document.getElementById(ids.score).textContent = (fa ? 'امتیاز: ' : 'Score: ') + cfg.score;
+            document.getElementById(ids.best).textContent = (fa ? 'رکورد: ' : 'Best: ') + best;
+            document.getElementById(ids.restart).onclick = () => { hideGameOverlay(ids.overlay); cfg.onRestart(); };
+            if (ids.menu) document.getElementById(ids.menu).onclick = () => { hideGameOverlay(ids.overlay); cfg.onMenu && cfg.onMenu(); };
+            showGameOverlay(ids.overlay);
+            return best;
+        }
+
+        function configureDebug(c) {
+            if (c && c.canvas) dbgCfg.canvas = c.canvas;
+            if (c && c.hit) dbgCfg.hit = c.hit;
+        }
+
+        return {
+            haptic: mAiGameHaptic, filterInPlace: mu_filterInPlace,
+            tier: mu_tier, tierDpr: mu_tierDpr, frameCapMs: mu_frameCapMs,
+            makeMeter: mu_makeMeter, applyDpr: mu_applyDpr,
+            dbgWork: mu_dbgWork, dbgFrame: mu_dbgFrame, configureDebug: configureDebug,
+            showOverlay: showGameOverlay, hideOverlay: hideGameOverlay,
+            getBest: getBest, saveBest: markhinGameBestScore,
+            fitCanvas: fitCanvas, lastFit: lastFit,
+            presentGameOver: presentGameOver
+        };
+})();
+window.MU_GameKit = MU_GameKit;
+</script>
+<script>
+/* =========================================================================
+   MU_Snake — the "Neon Snake" game module.
+   ---------------------------------------------------------------------
+   This is a normal plug-in of the MU_Game hub, exactly like Night Driver,
+   Monster Hunt, etc.: it owns only its own DOM (#mzRoot start panel,
+   #snModal play area), its own canvas/loop and its own pause/refit/hide,
+   and registers itself at the bottom of this script through
+   MU_Game.register('neon-snake', {...}).
+
+   Shared helpers come from MU_GameKit (previous script).
+   It does NOT own: the hub, the back button, the Telegram lifecycle
+   (deactivated / viewportChanged / BackButton), ?game= deep links, or the
+   hub card's text/best chip — MU_Game does all of that from the data passed
+   to register(). There is no second menu/shell any more.
+   ========================================================================= */
+const MU_Snake = (function () {
+        // Neon Snake's own runtime state, private to this module.
+        let currentGameInterval = null;
+        let snScore = 0;
+        let gameAborter = new AbortController();
+        let gameStopFn = null;     // cleanup for the active game's animation loop
+        let gamePaused = false;    // true while the pause overlay is showing
+        let gameResizeTimer = null;
+        let activeGame = null;     // 'snake' while a run is on screen (used by refit)
+
+        // Game-agnostic helpers (haptics, best score, quality tier, canvas fit,
+        // game-over card, polyfills) live in MU_GameKit — see the script above.
+        const { haptic: mAiGameHaptic, filterInPlace: mu_filterInPlace, tier: mu_tier, tierDpr: mu_tierDpr,
+                frameCapMs: mu_frameCapMs, makeMeter: mu_makeMeter, applyDpr: mu_applyDpr,
+                dbgWork: mu_dbgWork, dbgFrame: mu_dbgFrame,
+                showOverlay: showGameOverlay, hideOverlay: hideGameOverlay,
+                saveBest: markhinGameBestScore } = MU_GameKit;
+        MU_GameKit.configureDebug({ canvas: 'snCanvas', hit: '#snScore' });
+
+        // Snake's own markup ids for the shared game-over card.
+        const SNAKE_OVER_IDS = { overlay: 'snOverOverlay', title: 'snOverTitle', score: 'snOverScore',
+                                 best: 'snOverBest', restart: 'snBtnRestart' };
+        function fitGameCanvas(canvas, mode, opts) {
+            return MU_GameKit.fitCanvas(document.getElementById('snCanvasWrap'), canvas, mode, opts);
+        }
+        // Reveals the game-over card with the final score (and pauses the run).
         function presentGameOver(scoreVal, bestKey, titleText, onRestart) {
             gamePaused = true;
-            const best = markhinGameBestScore(bestKey, scoreVal);
-            const fa = currentLang === 'fa';
-            document.getElementById('goTitle').textContent = titleText;
-            document.getElementById('goScoreText').textContent = (fa ? 'امتیاز: ' : 'Score: ') + scoreVal;
-            document.getElementById('goBestText').textContent = (fa ? 'رکورد: ' : 'Best: ') + best;
-            const restartBtn = document.getElementById('btnGoRestart');
-            const menuBtn = document.getElementById('btnGoMenu');
-            restartBtn.onclick = () => { hideGameOverlay('gameOverOverlay'); onRestart(); };
-            menuBtn.onclick = () => { hideGameOverlay('gameOverOverlay'); backToGameMenu(); };
-            showGameOverlay('gameOverOverlay');
+            MU_GameKit.presentGameOver({ score: scoreVal, bestKey: bestKey, title: titleText,
+                                         onRestart: onRestart, ids: SNAKE_OVER_IDS });
         }
+
+        function clearGameEvents() {
+            if (currentGameInterval) {
+                clearInterval(currentGameInterval);
+                currentGameInterval = null;
+            }
+            if (gameStopFn) {
+                try { gameStopFn(); } catch (_) {}
+                gameStopFn = null;
+            }
+            gamePaused = false;
+            hideGameOverlay('snPauseOverlay');
+            hideGameOverlay('snOverOverlay');
+            gameAborter.abort();
+            gameAborter = new AbortController();
+        }
+
 
         // Auto-pause when the tab/app is backgrounded (Telegram Mini Apps and
         // mobile browsers both suspend timers/rAF then resume with a huge
@@ -19185,24 +19037,19 @@ return api;
         // through the exact same pause-card path so those Telegram-only
         // cases are covered too, not just a full OS-level tab switch.
         function mAiGamePauseIfPlaying() {
-            if (document.getElementById('gamePlayArea').style.display === 'flex' && !gamePaused) {
+            if (document.getElementById('snPlay').style.display === 'flex' && !gamePaused) {
                 gamePaused = true;
-                showGameOverlay('gamePauseOverlay');
+                showGameOverlay('snPauseOverlay');
             }
         }
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) mAiGamePauseIfPlaying();
         });
         window.addEventListener('blur', mAiGamePauseIfPlaying);
-        function mAiGameWireTelegramDeactivate() {
-            try { TG && TG.onEvent && TG.onEvent('deactivated', mAiGamePauseIfPlaying); } catch (_) {}
-        }
-        mAiGameWireTelegramDeactivate();
-        if (window.__muTgLoaded) { window.__muTgLoaded.then(mAiGameWireTelegramDeactivate); }
-        document.getElementById('gamePauseOverlay').addEventListener('click', () => {
+        document.getElementById('snPauseOverlay').addEventListener('click', () => {
             if (gamePaused) {
                 gamePaused = false;
-                hideGameOverlay('gamePauseOverlay');
+                hideGameOverlay('snPauseOverlay');
             }
         });
 
@@ -19213,7 +19060,7 @@ return api;
         // event, since Telegram can change the usable height (expanding,
         // collapsing, safe-area shifts) without ever firing a window resize.
         function mAiGameScheduleRefit() {
-            const playing = document.getElementById('gamePlayArea').style.display === 'flex';
+            const playing = document.getElementById('snPlay').style.display === 'flex';
             if (!playing) return;
             clearTimeout(gameResizeTimer);
             gameResizeTimer = setTimeout(() => {
@@ -19229,91 +19076,45 @@ return api;
                 // itself" complaint this fixes. Only restart when the play
                 // area's actual size moved by more than a small threshold;
                 // ignore anything smaller as pure UI chrome noise.
-                const wrap = document.getElementById('gameCanvasWrap');
+                const wrap = document.getElementById('snCanvasWrap');
                 if (wrap) {
                     const rect = wrap.getBoundingClientRect();
-                    const dw = Math.abs(rect.width - (window.__markhinFitW || 0));
-                    const dh = Math.abs(rect.height - (window.__markhinFitH || 0));
+                    const dw = Math.abs(rect.width - (MU_GameKit.lastFit.w || 0));
+                    const dh = Math.abs(rect.height - (MU_GameKit.lastFit.h || 0));
                     if (dw < 30 && dh < 30) return;
                 }
-                if (window.__markhinActiveGame === 'snake') startNeonSnake();
+                if (activeGame === 'snake') startNeonSnake();
             }, 200);
         }
-        window.addEventListener('resize', mAiGameScheduleRefit);
-        // Bug fix (real root cause of "screen shakes / obstacles jitter
-        // constantly", specifically inside Telegram): TG is declared as
-        // `let TG = null` near the top of this script and is only ever
-        // assigned a real value inside mu_applyTelegramSetup(), which runs
-        // later — after window.__muTgLoaded resolves, since the Telegram
-        // SDK <script> tag is loaded asynchronously (see its own comment)
-        // specifically so a slow/blocked telegram.org connection can't
-        // stall the whole page. This line, however, used to run immediately
-        // as the script parses top-to-bottom, long before that SDK script
-        // has had any chance to load — so `TG` was still `null` here every
-        // single time, `TG && TG.onEvent` short-circuited, and
-        // TG.onEvent('viewportChanged', ...) was silently never actually
-        // called. Net effect: mAiGameScheduleRefit (which re-fits the
-        // canvas — new backing-store size, new logical width/height — to
-        // real layout changes) only ever heard the plain DOM 'resize'
-        // event, never Telegram's own 'viewportChanged'. But
-        // mu_setAppVh — correctly wired from inside mu_applyTelegramSetup,
-        // so it DOES receive 'viewportChanged' — keeps --app-1vh (which
-        // #gameModal/.game-card.gc-playing size themselves off) in sync
-        // with Telegram's own safe-area/chrome recalculations, and Telegram
-        // fires those fairly often on Android without ever dispatching a
-        // matching DOM 'resize'. Each time that happened, the play area's
-        // on-screen box quietly resized while the canvas's own backing
-        // store and the game's cached width/height stayed exactly as they
-        // were at launch — a real, visible mismatch between where the
-        // canvas now sits (re-centered by .game-canvas-wrap's flex layout
-        // around its new box) and the coordinates every obstacle is still
-        // being drawn at, which is exactly a "screen shake" with obstacles
-        // seeming to jump/speed around relative to it, recurring every time
-        // Telegram sends one of these events — not a one-off. Deferring
-        // this same registration onto window.__muTgLoaded (already used
-        // above for the exact same TG-not-ready-yet reason) makes sure it
-        // actually attaches once TG is real, instead of silently no-oping
-        // once at parse time and never being retried.
-        function mAiGameWireTelegramViewport() {
-            try { TG && TG.onEvent && TG.onEvent('viewportChanged', mAiGameScheduleRefit); } catch (_) {}
-        }
-        mAiGameWireTelegramViewport();
-        if (window.__muTgLoaded) { window.__muTgLoaded.then(mAiGameWireTelegramViewport); }
+        // (Telegram 'viewportChanged' + window 'resize' used to be wired here with
+        // a TG that was still null at parse time, so the Telegram half never
+        // attached. MU_Game now owns both and calls our refit() — see register.)
 
         function enterGamePlayMode() {
-            document.getElementById('gameModal').style.display = 'flex';
+            document.getElementById('snModal').style.display = 'flex';
             zoneHidePanels();
-            document.getElementById('gameSelectMenu').style.display = 'none';
-            // Was 'block': #gamePlayArea's CSS is display:flex so its two
-            // children (.game-topbar and .game-canvas-wrap, which has
+            // Was 'block': #snPlay's CSS is display:flex so its two
+            // children (.sn-topbar and .sn-canvas-wrap, which has
             // flex:1 1 auto) stack and the canvas area stretches to fill
             // every remaining pixel. Overriding it to 'block' here broke
-            // that flex layout, so .game-canvas-wrap only took its natural
+            // that flex layout, so .sn-canvas-wrap only took its natural
             // content height and left an empty, untouchable strip at the
             // bottom of the screen — exactly the dead zone being reported.
-            document.getElementById('gamePlayArea').style.display = 'flex';
-            document.getElementById('gameCard').classList.remove('gc-menu');
-            document.getElementById('gameCard').classList.add('gc-playing');
-            document.getElementById('gameModal').classList.remove('gm-menu-mode');
-            hideGameOverlay('gameOverOverlay');
-            hideGameOverlay('gamePauseOverlay');
+            document.getElementById('snPlay').style.display = 'flex';
+            hideGameOverlay('snOverOverlay');
+            hideGameOverlay('snPauseOverlay');
             gamePaused = false;
         }
 
         /* ---------------------------- Neon Snake ---------------------------- */
 
         function startNeonSnake() {
-            window.__markhinActiveGame = 'snake';
+            activeGame = 'snake';
             const fa = currentLang === 'fa';
             enterGamePlayMode();
-            document.getElementById('gameCard').classList.add('theme-snake');
-            document.getElementById('gameTitleActive').innerText = 'NEON SNAKE';
-            document.getElementById('gameDescActive').innerText = fa
-                ? 'با کلیدهای جهت‌نما یا کشیدن دست مار را هدایت کن! مراقب موانع بنفش باش و دانه‌های طلایی رو سریع بگیر!'
-                : 'Steer with arrow keys or swipe! Watch for purple obstacles and grab gold bonuses fast!';
 
             clearGameEvents();
-            const canvas = document.getElementById('cyberCanvas');
+            const canvas = document.getElementById('snCanvas');
             // Was 'square' — that centered a small square arena inside the
             // tall play area and left big empty bars above/below it (the
             // "game is just a little patch" issue). 'fill' uses the entire
@@ -19422,7 +19223,7 @@ return api;
             // Was 105ms originally, then 140ms — now 170ms.
             let stepMs = 170;
             let ended = false;
-            gameScore = 0;
+            snScore = 0;
 
             // --------------- upgrades: obstacles, gold food, combo, fx ---------------
             // Purple obstacle blocks start showing up once the player has
@@ -19455,7 +19256,7 @@ return api;
 
             function updateScoreLabel() {
                 const comboTxt = combo > 1 ? ' (x' + combo + ')' : '';
-                document.getElementById('gameScore').innerText = (fa ? 'امتیاز: ' : 'Score: ') + gameScore + comboTxt;
+                document.getElementById('snScore').innerText = (fa ? 'امتیاز: ' : 'Score: ') + snScore + comboTxt;
             }
             updateScoreLabel();
 
@@ -19738,20 +19539,20 @@ return api;
             // Bound to the wrapper (the whole area under the top bar), not
             // just the canvas, so every tap/swipe there steers the snake —
             // per the request that anything except the top bar should count
-            // as game input. The .game-overlay-panel check lets taps on the
+            // as game input. The .sn-overlay-panel check lets taps on the
             // pause/game-over cards (and their buttons) reach those cards
             // normally instead of being eaten as a swipe.
-            const snakeWrap = document.getElementById('gameCanvasWrap');
+            const snakeWrap = document.getElementById('snCanvasWrap');
 
             snakeWrap.addEventListener('touchstart', e => {
-                if (e.target.closest('.game-overlay-panel')) return;
+                if (e.target.closest('.sn-overlay-panel')) return;
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
                 e.preventDefault();
             }, { passive: false, signal: gameAborter.signal });
 
             snakeWrap.addEventListener('touchmove', e => {
-                if (e.target.closest('.game-overlay-panel')) return;
+                if (e.target.closest('.sn-overlay-panel')) return;
                 if (touchStartX === null || touchStartY === null) return;
                 let diffX = e.touches[0].clientX - touchStartX;
                 let diffY = e.touches[0].clientY - touchStartY;
@@ -19797,7 +19598,7 @@ return api;
             function endSnake() {
                 if (ended) return;
                 ended = true;
-                presentGameOver(gameScore, 'snake', fa ? '🐍 بازی تمام شد!' : '🐍 Game over!', startNeonSnake);
+                presentGameOver(snScore, 'snake', fa ? '🐍 بازی تمام شد!' : '🐍 Game over!', startNeonSnake);
             }
 
             let raf = null, lastTick = 0, acc = 0, prevSnake = null;
@@ -19891,21 +19692,21 @@ return api;
 
                             if (ateGold) {
                                 const gained = 30 * combo;
-                                gameScore += gained;
+                                snScore += gained;
                                 spawnParticles(goldFood.x, goldFood.y, '#ffd23f', 16);
                                 spawnPopup(goldFood.x, goldFood.y, '+' + gained, '#ffd23f');
                                 goldFood = null;
                                 mAiGameHaptic('medium');
                             } else {
                                 const gained = 10 * combo;
-                                gameScore += gained;
+                                snScore += gained;
                                 spawnParticles(food.x, food.y, '#ff0055', 10);
                                 spawnPopup(food.x, food.y, '+' + gained, '#ff8fb3');
                                 mAiGameHaptic('light');
                             }
                             updateScoreLabel();
 
-                            if (gameScore >= nextObstacleScore) {
+                            if (snScore >= nextObstacleScore) {
                                 spawnObstacle();
                                 nextObstacleScore += 70;
                             }
@@ -20099,9 +19900,7 @@ return api;
         function zoneHidePanels() {
             document.querySelectorAll('#mzRoot .mz-panel').forEach(p => { p.hidden = true; });
         }
-        function zoneBestOf(key) {
-            try { return parseInt(localStorage.getItem('markhin_game_best_' + key) || '0', 10) || 0; } catch (_) { return 0; }
-        }
+        function zoneBestOf(key) { return MU_GameKit.getBest(key); }
         function zoneApplyLang() {
             const lang = (typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en' : 'fa';
             Object.keys(ZONE).forEach(id => {
@@ -20120,11 +19919,10 @@ return api;
         function zoneShowStart(id) {
             if (!ZONE[id]) return;
             zoneId = id;
+            activeGame = null;
             clearGameEvents();
-            const card = document.getElementById('gameCard');
-            ['gc-playing', 'gc-menu', 'theme-snake'].forEach(c => card.classList.remove(c));
-            document.getElementById('gamePlayArea').style.display = 'none';
-            document.getElementById('gameModal').style.display = 'none';
+            document.getElementById('snPlay').style.display = 'none';
+            document.getElementById('snModal').style.display = 'none';
             document.getElementById('mzRoot').hidden = false;
             zoneHidePanels();
             zoneApplyLang();
@@ -20134,14 +19932,13 @@ return api;
             if (zoneId && ZONE[zoneId]) ZONE[zoneId].start();
         }
         function zoneHide() {
+            activeGame = null;
             clearGameEvents();
-            const modal = document.getElementById('gameModal');
+            const modal = document.getElementById('snModal');
             if (modal) modal.style.display = 'none';
             const root = document.getElementById('mzRoot');
             if (root) root.hidden = true;
         }
-        // In-game / game-over "منو" -> back to this game's start page.
-        function backToGameMenu() { zoneShowStart(zoneId || 'snake'); }
         // In-game "خروج" -> back to the arcade hub (the hub then calls hide()).
         function closeGame() {
             if (typeof window.mgBackToHub === 'function') window.mgBackToHub(); else zoneHide();
@@ -20152,63 +19949,38 @@ return api;
             begin: zoneBegin,
             hide: zoneHide,
             pause: mAiGamePauseIfPlaying,
+            refit: mAiGameScheduleRefit,
             applyLang: zoneApplyLang,
-            backToMenu: backToGameMenu,
             close: closeGame
         };
         })();
-        window.MU_Zone = MU_Zone;
+        window.MU_Snake = MU_Snake;
 
 (function(){
   if (!window.MU_Game || typeof window.MU_Game.register !== 'function') return;
-  var map = { 'neon-snake':'snake' };
-  Object.keys(map).forEach(function(gid){
-    window.MU_Game.register(gid, {
-      mount:  function(){ window.MU_Zone.show(map[gid]); },
-      pause:  function(){ window.MU_Zone.pause(); },
-      hide:   function(){ window.MU_Zone.hide(); },
-      resume: function(){}
-    });
+  window.MU_Game.register('neon-snake', {
+    aliases: ['snake'],
+    mount:  function(){ window.MU_Snake.show('snake'); },
+    pause:  function(){ window.MU_Snake.pause(); },
+    hide:   function(){ window.MU_Snake.hide(); },
+    resume: function(){},
+    refit:  function(){ window.MU_Snake.refit(); },
+    card: {
+      id: 'NeonSnake',
+      bestKey: 'markhin_game_best_snake',
+      text: {
+        fa: ['مار نئونی','مار نئونی رو با کشیدن انگشتت هدایت کن، دانه‌های طلایی رو بگیر و از موانع بنفش دور بمون.','🐍 بزن بریم'],
+        en: ['Neon Snake','Swipe to steer the neon snake, grab the golden bonuses and avoid the purple obstacles.','🐍 Let\'s go']
+      }
+    }
   });
   var baseLang = window.applyLanguageUI;
   window.applyLanguageUI = function(){
     if (typeof baseLang === 'function') baseLang.apply(this, arguments);
-    try { window.MU_Zone.applyLang(); } catch(_){}
+    try { window.MU_Snake.applyLang(); } catch(_){}
+    try { window.MU_Game.refreshCards(); } catch(_){}
   };
-  var baseOpen = window.MU_Game.open, used = false;
-  window.MU_Game.open = function(){
-    baseOpen.apply(this, arguments);
-    if (used) return; used = true;
-    var m = /[?#&]game=([\w-]+)/.exec(location.search + location.hash);
-    if (!m) return;
-    var q = m[1], gid = null;
-    Object.keys(map).forEach(function(k){ if (k === q || map[k] === q) gid = k; });
-    if (gid) window.MU_Game.launch(gid);
-  };
-
-  // ---- hub cards for the four extra games: language + best-score chips ----
-  var CARDS = {
-    snake:    { id:'NeonSnake',       key:'snake',    fa:['مار نئونی','مار نئونی رو با کشیدن انگشتت هدایت کن، دانه‌های طلایی رو بگیر و از موانع بنفش دور بمون.','🐍 بزن بریم'],
-                                      en:['Neon Snake','Swipe to steer the neon snake, grab the golden bonuses and avoid the purple obstacles.','🐍 Let\'s go'] }
-  };
-  function refreshZoneCards(){
-    var lang = (typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en' : 'fa';
-    Object.keys(CARDS).forEach(function(k){
-      var c = CARDS[k], t = c[lang];
-      var a = document.getElementById('mgCard'+c.id+'TitleFa'), b = document.getElementById('mgCard'+c.id+'Desc'), d = document.getElementById('mgCard'+c.id+'Play');
-      if (a) a.textContent = t[0]; if (b) b.textContent = t[1]; if (d) d.textContent = t[2];
-      try {
-        var n = parseInt(localStorage.getItem('markhin_game_best_'+c.key), 10) || 0;
-        var chip = document.getElementById('mgCard'+c.id+'Best'), val = document.getElementById('mgCard'+c.id+'BestVal');
-        if (chip && val){ if (n > 0){ val.textContent = n; chip.hidden = false; } else chip.hidden = true; }
-      } catch(_){}
-    });
-  }
-  var baseShowHub = window.MU_Game.showHub;
-  window.MU_Game.showHub = function(){ baseShowHub.apply(this, arguments); refreshZoneCards(); };
-  var baseLang2 = window.applyLanguageUI;
-  window.applyLanguageUI = function(){ if (typeof baseLang2 === 'function') baseLang2.apply(this, arguments); refreshZoneCards(); };
-  refreshZoneCards();
+  window.MU_Game.refreshCards();
 })();
 </script>
 <script>
